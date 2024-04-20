@@ -20,7 +20,7 @@
 // #include <QTextOption>
 // #include <windows.h>
 
-#define FONT_SIZE 16
+#define FONT_SIZE 16 // 默认作业
 
 Widget::Widget(QWidget* parent)
     : QWidget(parent), ui(new Ui::Widget)
@@ -66,9 +66,9 @@ Widget::Widget(QWidget* parent)
     int max = 0;       // 最小值
     int i_genNum = 0;  // 生成数量
 
-    bool b_isLog = 0;// 是否生成日志
-    bool b_useFile = 0;// 是否使用list.txt
-    bool b_isRepeat = 0;// 是否重复
+    bool b_isLog = 0;    // 是否生成日志
+    bool b_useFile = 0;  // 是否使用list.txt
+    bool b_isRepeat = 0; // 是否重复
 
     // connect(ui->minBox,&QSpinBox::valueChanged,[=]()mutable{min = ui->minBox->value();}); // 获取最小值
     // connect(ui->maxBox,&QSpinBox::valueChanged,[=]()mutable{max = ui->maxBox->value();}); // 获取最大值
@@ -78,9 +78,8 @@ Widget::Widget(QWidget* parent)
         {
             // 检测是否勾选某些 checkBox
             if (ui->isLog->isChecked())b_isLog = 1;
-            // if (ui->useFile->isChecked())b_useFile = 1;
             if (ui->isRepeat->isChecked())b_isRepeat = 1;
-            // if (!ui->useFile->isChecked())b_useFile = 0;
+            // if (ui->useFile->isChecked())b_useFile = 1;
 
             // 读取最大值，最小值，生成数量
             min = ui->minBox->value();
@@ -100,19 +99,16 @@ Widget::Widget(QWidget* parent)
                 QDir dir(QDir::currentPath());
                 if (!dir.exists("data"))dir.mkdir("data");
 
-                // 打开文件
-                fLog.open(QIODevice::Append);
-
-                // 写入文件
-                sLog << "[" << time.toString("yyyy.MM.dd hh:mm:ss zzz ddd") << "] ";
+                fLog.open(QIODevice::Append); // 打开文件
+                sLog << "[" << time.toString("yyyy.MM.dd hh:mm:ss zzz ddd") << "] "; // 写入文件
             }
-
             // qDebug()<<i_genNum;
 
             // 当最大值小于最小值时报错
             if (min >= max)
             {
                 QMessageBox::warning(this, "警告", "最大值不得小于等于最小值");
+                if (b_isLog == 1)sLog << "error" << "\n"; // 输出日志
                 return;
             }
 
@@ -121,13 +117,13 @@ Widget::Widget(QWidget* parent)
                 ui->textBrowser->clear(); // 清屏
                 for (int i = 0;i < (i_genNum - 1);i++)
                 {
-                    random = QRandomGenerator::global()->bounded(min, max + 1); // 生成随机数
+                    random = QRandomGenerator::global()->bounded(min, max + 1);       // 生成随机数
                     ui->textBrowser->insertPlainText(QString::number(random) + ", "); // 输出随机数
 
                     if (b_isLog == 1)sLog << random << ", "; // 输出日志
                 }
                 random = QRandomGenerator::global()->bounded(min, max + 1); // 生成随机数
-                ui->textBrowser->insertPlainText(QString::number(random)); // 输出随机数
+                ui->textBrowser->insertPlainText(QString::number(random));  // 输出随机数
 
                 if (b_isLog == 1)sLog << random << "\n"; // 输出日志
                 fLog.close();
@@ -138,6 +134,7 @@ Widget::Widget(QWidget* parent)
                 if (i_genNum > max - min + 1)
                 {
                     QMessageBox::warning(this, "警告", "在不可重复模式下，生成数量不得大于 (最大值-最小值+1)");
+                    if (b_isLog == 1)sLog << "error" << "\n"; // 输出日志
                     return;
                 }
 
@@ -165,118 +162,79 @@ Widget::Widget(QWidget* parent)
                 if (b_isLog == 1)sLog << random << "\n"; // 当输出日志时
                 fLog.close();
             }
-
-            /*
-            if (b_isRepeat == 1 && b_useFile == 1) // 重复，使用 list.txt
-            {
-                // 读取list.txt
-                QFile fList("data/list.txt");
-                QTextStream sList(&fList);
-
-                QStringList strList={};
-
-                QFileInfo fInfo("data/list.txt");
-                if(!fInfo.exists()) // 当文件不存在时
-                {
-                    QMessageBox::warning(this, "警告", "data/list.txt 不存在");
-                    return;
-                }
-
-                if (fList.open(QIODevice::ReadOnly|QIODevice::Text))
-                {
-                    QString listStr = sList.readAll();
-                    fList.close();
-
-                    if(listStr.isEmpty()) // 当文件为空时
-                    {
-                        QMessageBox::warning(this, "警告", "data/list.txt 不得为空");
-                        return;
-                    }
-
-                    strList=listStr.trimmed().replace(" ","").replace("\n","").split(',');
-                }
-
-                ui->textBrowser->clear(); // 清屏
-                for (int i = 0;i < (i_genNum - 1);i++)
-                {
-                    subRandom = QRandomGenerator::global()->bounded(0, strList.count()); // 生成随机数
-                    ui->textBrowser->insertPlainText(strList[subRandom] + ", "); // 输出随机数
-
-                    if (b_isLog == 1)sLog << strList[subRandom] << ", "; // 输出日志
-                }
-                subRandom = QRandomGenerator::global()->bounded(0, strList.count()); // 生成随机数
-                ui->textBrowser->insertPlainText(strList[subRandom]); // 输出随机数
-
-                if (b_isLog == 1)sLog << strList[subRandom] << "\n"; // 输出日志
-            }
-
-            if (b_isRepeat == 0 && b_useFile == 1) // 不重复，使用 list.txt
-            {
-                if (i_genNum > max - min + 1)
-                {
-                    QMessageBox::warning(this, "警告", "在不可重复模式下，生成数量不得大于 data/list.txt 中的元素数量");
-                    return;
-                }
-
-                // 读取list.txt
-                QFile fList("data/list.txt");
-                QTextStream sList(&fList);
-
-                QStringList strList={};
-
-                QFileInfo fInfo("data/list.txt");
-                if(!fInfo.exists()) // 当文件不存在时
-                {
-                    QMessageBox::warning(this, "警告", "data/list.txt 不存在");
-                    return;
-                }
-
-                if (fList.open(QIODevice::ReadOnly|QIODevice::Text))
-                {
-                    QString listStr = sList.readAll();
-                    fList.close();
-
-                    if(listStr.isEmpty()) // 当文件为空时
-                    {
-                        QMessageBox::warning(this, "警告", "data/list.txt 不得为空");
-                        return;
-                    }
-
-                    strList=listStr.trimmed().replace(" ","").replace("\n","").split(',');
-                }
-
-                ui->textBrowser->clear(); // 清屏
-                for (int i = 0;i < (i_genNum - 1);i++)
-                {
-                    subRandom = QRandomGenerator::global()->bounded(0, strList.count()); // 生成随机数
-                    ui->textBrowser->insertPlainText(strList[subRandom] + ", "); // 输出随机数
-                    strList.takeAt(subRandom);
-
-                    if (b_isLog == 1)sLog << strList[subRandom] << ", "; // 输出日志
-                }
-                subRandom = QRandomGenerator::global()->bounded(0, strList.count()); // 生成随机数
-                ui->textBrowser->insertPlainText(strList[subRandom]); // 输出随机数
-                strList.takeAt(subRandom);
-
-                if (b_isLog == 1)sLog << strList[subRandom] << "\n"; // 输出日志
-            }
-            */
         });
 
-    connect(ui->setSize, &QSpinBox::valueChanged, [=]() { // 当字号变化时
-        int size = ui->setSize->value();                  // 获取 setSize 当前值
+    connect(ui->setSize, &QSpinBox::valueChanged, [=]()
+        { // 当字号变化时
+            int size = ui->setSize->value(); // 获取 setSize 当前值
 
-        // 调节字号
-        QTextCharFormat format;
-        format.setFontPointSize(size);
-        ui->textBrowser->setCurrentCharFormat(format);
+            // 调节字号
+            QTextCharFormat format;
+            format.setFontPointSize(size);
+            ui->textBrowser->setCurrentCharFormat(format);
         });
 
 
     connect(ui->delLog, &QPushButton::clicked, []()
-        {
+        { // 清除日志
             QDir dir(QDir::currentPath());
             dir.remove("data/log.txt");
+        });
+
+    connect(ui->listBtn, &QPushButton::clicked, [=]() mutable
+        {
+            if (ui->isLog->isChecked())b_isLog = 1;
+
+            // 写入文件所需对象
+            // 输出日志
+            QFile fLog("data/log.txt");
+            QTextStream sLog(&fLog);
+
+            if (b_isLog == 1) // 输出日志（日期部分）
+            {
+                QDateTime time = QDateTime::currentDateTime(); // 获取当前时间
+
+                // 当文件夹不存在时创建
+                QDir dir(QDir::currentPath());
+                if (!dir.exists("data"))dir.mkdir("data");
+
+                fLog.open(QIODevice::Append); // 打开文件
+                sLog << "[" << time.toString("yyyy.MM.dd hh:mm:ss zzz ddd") << "] "; // 写入文件
+            }
+
+            // 读取list.txt
+            QFile fList("data/list.txt");
+            QTextStream sList(&fList);
+
+            QStringList strList = {};
+
+            QFileInfo fInfo("data/list.txt");
+            if (!fInfo.exists()) // 当文件不存在时
+            {
+                QMessageBox::warning(this, "警告", "data/list.txt 不存在");
+                if (b_isLog == 1)sLog << "error" << "\n"; // 输出日志
+                return;
+            }
+
+            ui->textBrowser->clear(); // 清屏
+
+            fList.open(QIODevice::ReadOnly | QIODevice::Text); // 打开文件
+
+            QString listStr = sList.readAll(); // 读取文件
+            fList.close(); // 关闭文件
+
+            if (listStr.isEmpty()) // 当文件为空时
+            {
+                QMessageBox::warning(this, "警告", "data/list.txt 不得为空");
+                if (b_isLog == 1)sLog << "error" << "\n"; // 输出日志
+                return;
+            }
+
+            strList = listStr.trimmed().replace(" ", "").replace("\n", "").split(','); // 分割listStr
+
+            std::random_shuffle(strList.begin(), strList.end());  // 打乱数组
+            ui->textBrowser->insertPlainText(strList.join(", ")); // 输出随机数
+            if (b_isLog == 1)sLog << strList.join(", ") << "\n";  // 输出日志
         });
 }
 
