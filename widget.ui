@@ -135,6 +135,13 @@
          <item row="0" column="1">
           <widget class="QSpinBox" name="minBox"/>
          </item>
+         <item row="3" column="2">
+          <widget class="QCheckBox" name="isBold">
+           <property name="text">
+            <string>黑体</string>
+           </property>
+          </widget>
+         </item>
         </layout>
        </widget>
       </item>
