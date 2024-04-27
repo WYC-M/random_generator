@@ -15,6 +15,8 @@ class Widget : public QWidget
 
 public:
     Widget(QWidget *parent = nullptr);
+    void outputLog(QString filePath, QString dirData, QString outputStr);
+    void changeSizeAndBold();
     ~Widget();
 
 private:
